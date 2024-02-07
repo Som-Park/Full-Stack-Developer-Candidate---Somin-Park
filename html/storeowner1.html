@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pizza Toppings</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .topping-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .topping {
+      margin: 10px;
+      padding: 10px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease-in-out;
+      cursor: pointer;
+      flex: 0 0 calc(20% - 20px); /* 20% width with 10px margin on each side */
+      box-sizing: border-box;
+    }
+
+    .topping:hover {
+      transform: scale(1.1);
+    }
+
+    input[type="checkbox"] {
+      display: none;
+    }
+
+    .topping-label {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .topping-label:before {
+      content: '\2713';
+      font-size: 30px;
+      color: transparent;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    input[type="checkbox"]:checked + .topping-label:before {
+      color: rgb(254, 134, 82);
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    button {
+      margin: 0 10px;
+      padding: 10px 20px;
+      background-color: rgb(254, 134, 82);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      margin-right: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    /* Modal Styling */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 60%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal input[type="text"] {
+      width: 100%;
+    }
+
+    .modal button {
+      margin-top: 10px;
+    }
+
+    .error-message {
+      color: red;
+      margin-top: 10px;
+    }
+
+    #character-image {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      max-width: 200px;
+      margin-right: 3%;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Pizza Toppings</h1>
+
+  <br><br><br><br>
+
+  <div class="topping-container">
+    <label class="topping">
+      <input type="checkbox" name="Topping 1">
+      <span class="topping-label">Cheese</span>
+    </label>
+
+    <label class="topping">
+      <input type="checkbox" name="Topping 2">
+      <span class="topping-label">Pepperoni</span>
+    </label>
+
+    <label class="topping">
+      <input type="checkbox" name="Topping 3">
+      <span class="topping-label">Mushrooms</span>
+    </label>
+    <!-- Add more toppings as needed -->
+  </div>
+
+  <br>
+  
+  <div class="button-container">
+    <label for="newTopping">New Topping: &ensp;</label>
+    <input type="text" id="newTopping" placeholder="Enter topping name">
+    <button onclick="addTopping()">Add Topping</button>
+    <button onclick="deleteTopping()">Delete Topping</button>
+    <button onclick="editTopping()">Edit Topping</button>
+    <a href="../html/intro.html"><button>Done</button></a>
+    <img src="../pics/character.PNG" alt="Character Image" id="character-image">
+  </div>
+
+  <!-- Modal for Editing Topping -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <label for="editToppingName">Edit Topping Name:</label>
+      <br><br>
+      <input type="text" id="editToppingName">
+      <button onclick="saveEditedTopping()">Done</button>
+      <button onclick="cancelEdit()">Cancel</button>
+      <div class="error-message" id="editErrorMessage"></div>
+    </div>
+  </div>
+
+  <script>
+    function addTopping() {
+      const container = document.querySelector('.topping-container');
+      const newToppingName = document.getElementById('newTopping').value.trim();
+      if (newToppingName !== '') {
+        if (!isToppingNameDuplicate(newToppingName)) {
+          const newToppingIndex = container.children.length + 1;
+          const newTopping = document.createElement('label');
+          newTopping.className = 'topping';
+          newTopping.innerHTML = `
+            <input type="checkbox" name="topping${newToppingIndex}">
+            <span class="topping-label">${newToppingName}</span>
+          `;
+          container.appendChild(newTopping);
+          document.getElementById('newTopping').value = ''; // Clear the input field
+        } else {
+          alert('Topping name already exists. Please enter a different name.');
+        }
+      }
+    }
+
+    function isToppingNameDuplicate(name) {
+      const existingToppings = document.querySelectorAll('.topping-label');
+      return Array.from(existingToppings).some(toppingLabel => toppingLabel.innerText.trim().toLowerCase() === name.toLowerCase());
+    }
+
+    function deleteTopping() {
+      const checkboxes = document.querySelectorAll('.topping input[type="checkbox"]:checked');
+      checkboxes.forEach((checkbox) => {
+        const toppingLabel = checkbox.nextElementSibling;
+        const toppingContainer = toppingLabel.parentElement;
+        toppingContainer.remove();
+      });
+    }
+
+    function editTopping() {
+      const checkboxes = document.querySelectorAll('.topping input[type="checkbox"]:checked');
+      if (checkboxes.length === 1) {
+        const toppingLabel = checkboxes[0].nextElementSibling;
+        const editModal = document.getElementById('editModal');
+        const editToppingNameInput = document.getElementById('editToppingName');
+        editToppingNameInput.value = toppingLabel.innerText;
+        editModal.style.display = 'block';
+        document.getElementById('editErrorMessage').innerText = ''; // Clear error message
+      } else {
+        alert('Please select exactly one topping to edit.');
+      }
+    }
+
+    function saveEditedTopping() {
+      const editModal = document.getElementById('editModal');
+      const editToppingNameInput = document.getElementById('editToppingName');
+      const toppingLabel = document.querySelector('.topping input[type="checkbox"]:checked + .topping-label');
+      const errorMessage = document.getElementById('editErrorMessage');
+
+      if (toppingLabel && editToppingNameInput.value.trim() !== '') {
+        const newToppingName = editToppingNameInput.value.trim();
+        if (!isToppingNameDuplicate(newToppingName)) {
+          toppingLabel.innerText = newToppingName;
+          editModal.style.display = 'none';
+          // Clear the input field
+          editToppingNameInput.value = '';
+          errorMessage.innerText = ''; // Clear error message
+        } else {
+          errorMessage.innerText = 'Topping name already exists. Please enter a different name.';
+        }
+      }
+    }
+
+    function cancelEdit() {
+      const editModal = document.getElementById('editModal');
+      const editToppingNameInput = document.getElementById('editToppingName');
+      editModal.style.display = 'none';
+      // Clear the input field
+      editToppingNameInput.value = '';
+      document.getElementById('editErrorMessage').innerText = ''; // Clear error message
+    }
+
+  </script>
+
+</body>
+</html>
+

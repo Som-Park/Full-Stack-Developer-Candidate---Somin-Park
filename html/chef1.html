@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pizza Chef</title>
+  <style>
+    body {
+      display: flex;
+      height: 100vh;
+      margin: 0;
+      background-color: #f4f4f4;
+    }
+
+    button {
+      margin: 0 5px;
+      padding: 8px 10px;
+      background-color: rgb(254, 134, 82);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #pizza-creator {
+      width: 60%;
+      padding: 20px;
+      box-sizing: border-box;
+      border-right: 2px solid #ccc;
+    }
+
+    #order-details {
+      flex: 1;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    #character-image {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      max-width: 200px;
+      margin-right: 3%;
+    }
+
+    #pizza-list {
+      list-style-type: none;
+      padding: 0;
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+    }
+
+    .pizza-item {
+      cursor: pointer;
+      padding: 5px 10px;
+      background-color: #f0f0f0;
+      border-radius: 5px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+    }
+
+    .pizza-item.selected {
+      background-color: rgb(192, 231, 195);
+    }
+
+    .pizza-order-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    #topping-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Edit Pizza List Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-content {
+      text-align: center;
+    }
+
+    #editPizzaListName {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="pizza-creator">
+    <h2>Create Your Pizza</h2>
+    <br>
+    <div id="pizza-list" onclick="selectPizza(event)">
+      <!-- Types of Pizzas will be dynamically added here -->
+    </div>
+    <br><br>
+    <button onclick="showToppingPopup()">Add Topping</button>
+    <ul id="topping-list">
+      <!-- Toppings will be dynamically added here -->
+    </ul>
+
+    <div>
+      <button onclick="createPizza()">Create Pizza</button>
+      <!-- Edit Pizza List button added here -->
+      <button onclick="editPizzaList()">Edit Pizza List</button>
+      <a href="../html/intro.html"><button>Go Back</button></a>
+    </div>
+    <p id="error-message" style="color: red;"></p>
+  </div>
+
+  <div id="order-details">
+    <h2>Order Details</h2>
+    <ul id="pizza-order-list">
+      <!-- Pizzas will be dynamically added here -->
+    </ul>
+    <img src="../pics/character.PNG" alt="Character Image" id="character-image">
+  </div>
+
+  <div id="topping-popup">
+    <h2>Select Toppings</h2>
+    <label><input type="checkbox" value="Cheese"> Cheese</label>
+    <label><input type="checkbox" value="Pepperoni"> Pepperoni</label>
+    <label><input type="checkbox" value="Mushrooms"> Mushrooms</label>
+    <!-- Add more toppings as needed -->
+    <button onclick="addToppings()">Done</button>
+  </div>
+
+  <!-- Edit Pizza List Modal -->
+  <div id="editPizzaListModal" class="modal">
+    <div class="modal-content">
+      <label for="editPizzaListName">Edit Pizza Name:</label>
+      <br><br>
+      <input type="text" id="editPizzaListName">
+      <button onclick="saveEditedPizzaList()">Done</button>
+      <button onclick="cancelEditPizzaList()">Cancel</button>
+      <div class="error-message" id="editPizzaListErrorMessage"></div>
+    </div>
+  </div>
+
+  <script>
+    const pizzaTypes = ["Margherita", "Pepperoni", "Vegetarian", "Hawaiian"];
+    const existingPizzas = [];
+
+    let isEditing = false;
+    let selectedPizzaItem = null;
+
+    // Populate pizza types
+    const pizzaListContainer = document.getElementById("pizza-list");
+    pizzaTypes.forEach(type => {
+      const pizzaItem = document.createElement('div');
+      pizzaItem.className = 'pizza-item';
+      pizzaItem.innerText = type;
+      pizzaItem.setAttribute('data-pizza', type);
+      pizzaListContainer.appendChild(pizzaItem);
+    });
+
+    function showToppingPopup() {
+      document.getElementById("topping-popup").style.display = "block";
+      isEditing = false;
+    }
+
+    function addToppings() {
+      const selectedToppings = Array.from(document.querySelectorAll('#topping-popup input:checked')).map(input => input.value);
+      document.getElementById("topping-list").innerHTML = selectedToppings.map(topping => `<li>${topping}</li>`).join('');
+      document.getElementById("topping-popup").style.display = "none";
+    }
+
+    function createPizza() {
+      const selectedPizza = document.querySelector('.pizza-item.selected');
+      if (!selectedPizza) {
+        alert("Please select a pizza type.");
+        return;
+      }
+
+      const pizzaName = selectedPizza.getAttribute('data-pizza');
+
+      if (isEditing) {
+        isEditing = false;
+      } else {
+        if (existingPizzas.includes(pizzaName)) {
+          document.getElementById("error-message").innerText = "Pizza with this name already exists. Please choose a different name.";
+          return;
+        }
+        existingPizzas.push(pizzaName);
+      }
+
+      const toppings = Array.from(document.querySelectorAll('#topping-list li')).map(li => li.innerText);
+      const pizzaOrderItem = document.createElement('li');
+      pizzaOrderItem.className = 'pizza-order-item';
+      pizzaOrderItem.innerHTML = `<div><strong>${pizzaName}</strong> - Toppings: ${toppings.join(', ')}</div><button onclick="deletePizza(this)">Delete</button>`;
+      pizzaOrderItem.addEventListener('click', () => editPizza(pizzaOrderItem));
+      document.getElementById("pizza-order-list").appendChild(pizzaOrderItem);
+
+      document.querySelector('.pizza-item.selected').classList.remove('selected');
+      document.getElementById("topping-list").innerHTML = "";
+      document.getElementById("error-message").innerText = "";
+    }
+
+    function selectPizza(event) {
+      const pizzaItems = document.querySelectorAll('.pizza-item');
+      pizzaItems.forEach(item => item.classList.remove('selected'));
+      selectedPizzaItem = event.target.closest('.pizza-item');
+      if (selectedPizzaItem) {
+        selectedPizzaItem.classList.add('selected');
+      }
+    }
+
+    function editPizza(pizzaOrderItem) {
+      const pizzaDetails = pizzaOrderItem.querySelector('div').innerHTML.match(/<strong>(.*?)<\/strong> - Toppings: (.*?)$/);
+      const pizzaName = pizzaDetails[1];
+      const toppings = pizzaDetails[2].split(', ');
+
+      const pizzaItems = document.querySelectorAll('.pizza-item');
+      pizzaItems.forEach(item => {
+        if (item.getAttribute('data-pizza') === pizzaName) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+
+      document.getElementById("topping-list").innerHTML = toppings.map(topping => `<li>${topping}</li>`).join('');
+
+      pizzaOrderItem.remove();
+      showToppingPopup();
+      isEditing = true;
+    }
+
+    function deletePizza(button) {
+      const pizzaOrderItem = button.closest('.pizza-order-item');
+      const pizzaName = pizzaOrderItem.querySelector('div').innerText.match(/<strong>(.*?)<\/strong>/)[1];
+      const index = existingPizzas.indexOf(pizzaName);
+      if (index !== -1) {
+        existingPizzas.splice(index, 1);
+      }
+      pizzaOrderItem.remove();
+    }
+
+    function editPizzaList() {
+      if (!selectedPizzaItem) {
+        alert("Please select a pizza from the list.");
+        return;
+      }
+
+      const editPizzaListModal = document.getElementById('editPizzaListModal');
+      const editPizzaListNameInput = document.getElementById('editPizzaListName');
+      editPizzaListNameInput.value = selectedPizzaItem.getAttribute('data-pizza');
+      editPizzaListModal.style.display = 'block';
+      document.getElementById('editPizzaListErrorMessage').innerText = ''; // Clear error message
+    }
+
+    function saveEditedPizzaList() {
+      if (!selectedPizzaItem) {
+        alert("Please select a pizza from the list.");
+        return;
+      }
+
+      const editedPizzaName = document.getElementById('editPizzaListName').value;
+
+      // Check if the edited pizza name already exists in the pizza list
+      if (pizzaTypes.includes(editedPizzaName)) {
+        document.getElementById('editPizzaListErrorMessage').innerText = "Pizza with this name already exists. Please choose a different name.";
+        return;
+      }
+
+      selectedPizzaItem.innerText = editedPizzaName;
+      selectedPizzaItem.setAttribute('data-pizza', editedPizzaName);
+
+      // Update the pizzaTypes array to reflect the changes
+      const index = pizzaTypes.indexOf(selectedPizzaItem.getAttribute('data-pizza'));
+      if (index !== -1) {
+        pizzaTypes[index] = editedPizzaName;
+      }
+
+      document.getElementById('editPizzaListModal').style.display = 'none';
+      document.getElementById('editPizzaListErrorMessage').innerText = ''; // Clear error message
+    }
+
+    function cancelEditPizzaList() {
+      document.getElementById('editPizzaListModal').style.display = 'none';
+    }
+  </script>
+</body>
+
+</html>
